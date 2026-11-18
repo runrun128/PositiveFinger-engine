@@ -1,0 +1,523 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PositiveFinger | Text Analyzer</title>
+<style>
+:root {
+  --bg:#f5f6f8;
+  --white:#ffffff;
+  --text:#20242c;
+  --muted:#858b98;
+  --line:#e8eaf0;
+  --blue:#536dfe;
+  --green:#16a477;
+  --red:#e35d69;
+  --yellow:#d99b29;
+}
+* {box-sizing:border-box}
+body {
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+}
+header {
+  height:68px;
+  background:white;
+  border-bottom:1px solid var(--line);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 35px;
+}
+.logo {font-size:19px;font-weight:800;letter-spacing:-.8px}
+.logo span {color:var(--blue)}
+.header-right {font-size:12px;color:var(--muted)}
+.layout {
+  display:grid;
+  grid-template-columns:220px 1fr;
+  min-height:calc(100vh - 68px);
+}
+nav {
+  padding:30px 18px;
+  background:white;
+  border-right:1px solid var(--line);
+}
+.nav-title {
+  font-size:10px;
+  color:#a1a6b1;
+  letter-spacing:1.5px;
+  margin:0 12px 15px;
+}
+.nav-item {
+  padding:12px;
+  border-radius:8px;
+  font-size:13px;
+  margin-bottom:5px;
+  color:#747b88;
+}
+.nav-item.active {background:#edf0ff;color:var(--blue);font-weight:700}
+main {padding:36px;max-width:1250px;width:100%;margin:auto}
+.heading {margin-bottom:28px}
+.heading h1 {font-size:25px;margin:0 0 8px;letter-spacing:-1px}
+.heading p {color:var(--muted);font-size:13px;margin:0}
+.panel {
+  background:white;
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:24px;
+  margin-bottom:20px;
+}
+.panel-title {font-size:14px;font-weight:700;margin-bottom:18px}
+textarea {
+  width:100%;
+  min-height:130px;
+  resize:vertical;
+  border:1px solid var(--line);
+  border-radius:9px;
+  padding:16px;
+  font-size:14px;
+  font-family:inherit;
+  outline:none;
+  line-height:1.8;
+}
+textarea:focus {border-color:var(--blue)}
+.actions {display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+button {
+  cursor:pointer;
+  border:0;
+  border-radius:7px;
+  padding:11px 18px;
+  font-size:12px;
+  font-weight:700;
+}
+.primary {background:var(--blue);color:white}
+.secondary {background:#f0f1f5;color:#555d6b}
+.examples {display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.example {font-size:11px;padding:8px 11px;background:#f5f6f9;color:#656c79}
+.results {display:none}
+.grid {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+}
+.metric {
+  background:white;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:20px;
+}
+.metric small {color:var(--muted);font-size:11px}
+.metric strong {display:block;font-size:26px;margin-top:10px}
+.metric .sub {font-size:11px;color:var(--muted);margin-top:5px}
+.green {color:var(--green)}
+.red {color:var(--red)}
+.yellow {color:var(--yellow)}
+.result-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.result-box {
+  background:white;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:22px;
+  min-width:0;
+}
+.result-box h3 {font-size:13px;margin:0 0 18px}
+.bar-row {margin:15px 0}
+.bar-label {display:flex;justify-content:space-between;font-size:11px;margin-bottom:7px}
+.bar {height:7px;background:#eff0f3;border-radius:10px;overflow:hidden}
+.fill {height:100%;border-radius:10px;transition:width .3s}
+.token {
+  display:inline-flex;
+  padding:7px 10px;
+  margin:4px;
+  background:#f1f3ff;
+  color:#5265ce;
+  border-radius:5px;
+  font-size:12px;
+}
+.token.neg {background:#fff0f0;color:var(--red)}
+.token.neutral {background:#f0f1f3;color:#777}
+.token small {margin-left:6px;opacity:.65}
+.reason {
+  font-size:12px;
+  line-height:1.9;
+  color:#626977;
+  padding:10px 0;
+  border-bottom:1px solid var(--line);
+}
+.verdict {
+  padding:18px;
+  border-radius:9px;
+  background:#f5f6fa;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:15px;
+}
+.verdict strong {font-size:20px}
+.verdict span {font-size:11px;color:var(--muted)}
+.history-item {
+  display:flex;
+  justify-content:space-between;
+  padding:13px 0;
+  border-bottom:1px solid var(--line);
+  font-size:12px;
+  gap:15px;
+}
+.history-item span {color:var(--muted)}
+.footer {text-align:center;color:#a0a5af;font-size:10px;padding:25px}
+@media(max-width:800px) {
+  .layout {grid-template-columns:1fr}
+  nav {display:none}
+  main {padding:20px}
+  header {padding:0 18px}
+  .grid {grid-template-columns:1fr}
+  .result-grid {grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Positive<span>Finger</span></div>
+  <div class="header-right">DEVELOPER EXPERIMENTAL ENVIRONMENT / v0.1</div>
+</header>
+
+<div class="layout">
+<nav>
+  <div class="nav-title">WORKSPACE</div>
+  <div class="nav-item active">◈　Text Analyzer</div>
+  <div class="nav-item">▤　Analysis Results</div>
+  <div class="nav-item">◷　Test History</div>
+  <div style="margin-top:35px" class="nav-title">SYSTEM</div>
+  <div class="nav-item">⚙　Configuration</div>
+  <div class="nav-item">ⓘ　About</div>
+</nav>
+
+<main>
+  <div class="heading">
+    <h1>Text Analyzer</h1>
+    <p>日本語文章の感情・文脈・ポジティブ度を解析する実験環境。</p>
+  </div>
+
+  <section class="panel">
+    <div class="panel-title">01 / INPUT TEXT</div>
+    <textarea id="input" placeholder="解析したい文章を入力してください..."></textarea>
+    <div class="actions">
+      <span id="count" style="font-size:11px;color:#999">0 characters</span>
+      <div style="display:flex;gap:8px">
+        <button class="secondary" onclick="clearInput()">CLEAR</button>
+        <button class="primary" onclick="analyze()">ANALYZE →</button>
+      </div>
+    </div>
+    <div class="examples">
+      <button class="example" onclick="sample(0)">素直なポジティブ</button>
+      <button class="example" onclick="sample(1)">皮肉・反語</button>
+      <button class="example" onclick="sample(2)">ネガティブ</button>
+      <button class="example" onclick="sample(3)">中立</button>
+      <button class="example" onclick="sample(4)">複雑な文章</button>
+    </div>
+  </section>
+
+  <div id="results" class="results">
+    <div class="heading">
+      <h1>Analysis Results</h1>
+      <p>解析結果と各評価指標</p>
+    </div>
+
+    <div class="grid">
+      <div class="metric">
+        <small>POSITIVE SCORE</small>
+        <strong class="green" id="positive">0%</strong>
+        <div class="sub">肯定的な表現の強さ</div>
+      </div>
+      <div class="metric">
+        <small>NEGATIVE SCORE</small>
+        <strong class="red" id="negative">0%</strong>
+        <div class="sub">否定的な表現の強さ</div>
+      </div>
+      <div class="metric">
+        <small>IRONY PROBABILITY</small>
+        <strong class="yellow" id="irony">0%</strong>
+        <div class="sub">皮肉の可能性（試作推定値）</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-title">02 / OVERALL JUDGMENT</div>
+      <div class="verdict">
+        <div>
+          <span>POSITIVEFINGER JUDGMENT</span>
+          <strong id="verdict">---</strong>
+        </div>
+        <span id="confidence">---</span>
+      </div>
+      <div id="reasons"></div>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-box">
+        <h3>03 / MORPHOLOGICAL ANALYSIS</h3>
+        <div id="tokens"></div>
+        <p style="font-size:10px;color:#999;margin-top:15px">
+          ※試作版の簡易単語分割。正式な形態素解析ではありません。
+        </p>
+      </div>
+
+      <div class="result-box">
+        <h3>04 / SENTIMENT DISTRIBUTION</h3>
+        <div id="bars"></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-title">05 / TEST HISTORY</div>
+      <div id="history"><span style="font-size:12px;color:#999">解析履歴はありません。</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    POSITIVEFINGER TEXT ANALYZER / EXPERIMENTAL VERSION 0.1<br>
+    NOT AN AI MODEL · RULE-BASED PROTOTYPE
+  </div>
+</main>
+</div>
+
+<script>
+const positiveWords = [
+  "嬉しい","楽しい","最高","素晴らしい","すごい",
+  "ありがとう","好き","大好き","幸せ","助かる",
+  "優しい","綺麗","かわいい","面白い","頑張って",
+  "おめでとう","天才","良い","いいね","成功",
+  "安心","感謝","尊敬","素敵","面白かった"
+];
+
+const negativeWords = [
+  "嫌い","最悪","ひどい","悲しい","辛い",
+  "つらい","苦しい","無理","うざい","消えろ",
+  "馬鹿","バカ","失敗","残念","怖い",
+  "不快","最低","気持ち悪い","腹立つ","嫌だ"
+];
+
+const ironyWords = [
+  "棒読み","皮肉","さすが","天才","笑",
+  "（笑）","ｗｗ","w","冗談","本当にすごい",
+  "はいはい","よかったね","すごいですね"
+];
+
+const negations = ["ない","ません","じゃない","ではない","なかった","なく"];
+
+const samples = [
+  "今日もありがとう！本当に最高の一日だった！",
+  "すごいね！本当に天才だね！（棒読み）",
+  "本当に最悪。もう何もかも嫌だ。",
+  "今日は学校に行って、授業を受けた。",
+  "すごく良かったけど、少し残念なところもあった。"
+];
+
+let history = [];
+
+document.getElementById("input").addEventListener("input", e => {
+  document.getElementById("count").textContent =
+    e.target.value.length + " characters";
+});
+
+function sample(index) {
+  document.getElementById("input").value = samples[index];
+  document.getElementById("count").textContent =
+    samples[index].length + " characters";
+  analyze();
+}
+
+function clearInput() {
+  document.getElementById("input").value = "";
+  document.getElementById("count").textContent = "0 characters";
+  document.getElementById("results").style.display = "none";
+}
+
+function countWords(text, words) {
+  return words.filter(word => text.includes(word));
+}
+
+function analyze() {
+  const text = document.getElementById("input").value.trim();
+  if (!text) {
+    alert("文章を入力してください。");
+    return;
+  }
+
+  const positive = countWords(text, positiveWords);
+  const negative = countWords(text, negativeWords);
+  const irony = countWords(text, ironyWords);
+
+  let p = positive.length;
+  let n = negative.length;
+  let i = irony.length;
+
+  let reasons = [];
+
+  // 否定表現の簡易検出
+  const hasNegation = negations.some(word => text.includes(word));
+
+  if (hasNegation) {
+    reasons.push("否定表現が検出されました。肯定語の意味が反転している可能性があります。");
+  }
+
+  if (positive.length) {
+    reasons.push("肯定的な単語: " + positive.join("、"));
+  }
+
+  if (negative.length) {
+    reasons.push("否定的な単語: " + negative.join("、"));
+  }
+
+  if (i) {
+    reasons.push("皮肉を示唆する表現: " + irony.join("、"));
+  }
+
+  // 単純な否定の補正
+  if (hasNegation && p > 0) {
+    n += 1;
+    reasons.push("肯定表現と否定表現の組み合わせを検出しました。");
+  }
+
+  // スコア計算
+  let total = p + n;
+  let positiveScore = total ? Math.round(p / total * 100) : 50;
+  let negativeScore = 100 - positiveScore;
+
+  // 皮肉スコア
+  let ironyScore = Math.min(95, i * 30);
+
+  if (positive.length && negative.length) {
+    ironyScore = Math.min(95, ironyScore + 20);
+  }
+
+  // 最終判定
+  let finalPositive = p - n;
+
+  if (ironyScore >= 30 && p > 0) {
+    finalPositive -= 1;
+    reasons.push("皮肉の可能性があるため、表面的な肯定表現を慎重に評価しています。");
+  }
+
+  let verdict;
+  let color;
+
+  if (finalPositive > 0) {
+    verdict = "POSITIVE";
+    color = "var(--green)";
+  } else if (finalPositive < 0) {
+    verdict = "NEGATIVE";
+    color = "var(--red)";
+  } else {
+    verdict = "NEUTRAL";
+    color = "var(--yellow)";
+  }
+
+  if (!reasons.length) {
+    reasons.push("判定に使用できる感情表現が十分に見つかりませんでした。");
+  }
+
+  document.getElementById("positive").textContent = positiveScore + "%";
+  document.getElementById("negative").textContent = negativeScore + "%";
+  document.getElementById("irony").textContent = ironyScore + "%";
+
+  const verdictEl = document.getElementById("verdict");
+  verdictEl.textContent = verdict;
+  verdictEl.style.color = color;
+
+  document.getElementById("confidence").textContent =
+    "RULE-BASED ESTIMATION";
+
+  document.getElementById("reasons").innerHTML =
+    reasons.map(r => `<div class="reason">・${escapeHTML(r)}</div>`).join("");
+
+  // 簡易形態素分割
+  const dictionary = [...positiveWords,...negativeWords,...ironyWords,
+    ...negations].sort((a,b) => b.length-a.length);
+
+  let remaining = text;
+  let found = [];
+
+  while (remaining.length > 0) {
+    let match = dictionary.find(w => remaining.startsWith(w));
+
+    if (match) {
+      let type = positiveWords.includes(match) ? "pos" :
+        negativeWords.includes(match) ? "neg" : "neutral";
+
+      found.push({word:match,type});
+      remaining = remaining.slice(match.length);
+    } else {
+      let chars = [...remaining];
+      let chunk = chars[0];
+      remaining = remaining.slice(chunk.length);
+
+      found.push({word:chunk,type:"neutral"});
+    }
+  }
+
+  document.getElementById("tokens").innerHTML = found.map(t =>
+    `<span class="token ${t.type === "neg" ? "neg" :
+    t.type === "neutral" ? "neutral" : ""}">${escapeHTML(t.word)}</span>`
+  ).join("");
+
+  // グラフ
+  const neutralScore = Math.max(0, 100 - positiveScore - negativeScore);
+
+  document.getElementById("bars").innerHTML = [
+    ["Positive",positiveScore,"var(--green)"],
+    ["Negative",negativeScore,"var(--red)"],
+    ["Irony",ironyScore,"var(--yellow)"]
+  ].map(([name,value,color]) => `
+    <div class="bar-row">
+      <div class="bar-label">
+        <span>${name}</span><b>${value}%</b>
+      </div>
+      <div class="bar">
+        <div class="fill" style="width:${value}%;background:${color}"></div>
+      </div>
+    </div>
+  `).join("");
+
+  document.getElementById("results").style.display = "block";
+
+  history.unshift({
+    text,
+    verdict,
+    time: new Date().toLocaleTimeString("ja-JP")
+  });
+
+  renderHistory();
+}
+
+function escapeHTML(value) {
+  return value.replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#39;"
+  })[c]);
+}
+
+function renderHistory() {
+  document.getElementById("history").innerHTML =
+    history.slice(0,10).map(item => `
+      <div class="history-item">
+        <div>${escapeHTML(item.text.slice(0,40))}</div>
+        <div>
+          <b>${item.verdict}</b>
+          <span>${item.time}</span>
+        </div>
+      </div>
+    `).join("");
+}
+</script>
+</body>
+</html>
